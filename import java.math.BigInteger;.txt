@@ -1,0 +1,78 @@
+import java.math.BigInteger;
+import java.util.HashMap;
+import java.util.Map;
+
+public class ShamirSecretSharing {
+
+    // Method to decode the y-value given the base
+    private static BigInteger decodeValue(String value, int base) {
+        return new BigInteger(value, base); // Converts the value from the given base to base 10
+    }
+
+    // Method to implement Lagrange Interpolation
+    public static BigInteger lagrangeInterpolation(Map<Integer, BigInteger> points, int k) {
+        BigInteger constantTerm = BigInteger.ZERO;
+
+        // Iterate through each point (x_i, y_i)
+        for (Map.Entry<Integer, BigInteger> point_i : points.entrySet()) {
+            int x_i = point_i.getKey();
+            BigInteger y_i = point_i.getValue();
+
+            BigInteger numerator = BigInteger.ONE;
+            BigInteger denominator = BigInteger.ONE;
+
+            // Calculate the Lagrange basis polynomial for this point
+            for (Map.Entry<Integer, BigInteger> point_j : points.entrySet()) {
+                int x_j = point_j.getKey();
+                if (x_i != x_j) {
+                    numerator = numerator.multiply(BigInteger.valueOf(-x_j)); // (0 - x_j)
+                    denominator = denominator.multiply(BigInteger.valueOf(x_i - x_j));
+                }
+            }
+
+            // Calculate the contribution of this point to the constant term (c)
+            BigInteger term = y_i.multiply(numerator).divide(denominator);
+            constantTerm = constantTerm.add(term);
+        }
+
+        return constantTerm;
+    }
+
+    public static void main(String[] args) {
+        // Test case 1 input in the required format
+        Map<Integer, String> inputs = new HashMap<>();
+        inputs.put(1, "{\"base\":\"10\",\"value\":\"28735619723837\"}");
+        inputs.put(2, "{\"base\":\"16\",\"value\":\"1A228867F0CA\"}");
+        inputs.put(3, "{\"base\":\"12\",\"value\":\"32811A4AA0B7B\"}");
+        inputs.put(4, "{\"base\":\"11\",\"value\":\"917978721331A\"}");
+        inputs.put(5, "{\"base\":\"16\",\"value\":\"1A22886782E1\"}");
+        inputs.put(6, "{\"base\":\"10\",\"value\":\"28735619654702\"}");
+        inputs.put(7, "{\"base\":\"14\",\"value\":\"71AB5070CC4B\"}");
+        inputs.put(8, "{\"base\":\"9\",\"value\":\"122662581541670\"}");
+        inputs.put(9, "{\"base\":\"8\",\"value\":\"642121030037605\"}");
+
+        int k = 6; // Degree + 1 = number of points required
+        Map<Integer, BigInteger> points = new HashMap<>();
+
+        // Parse and decode the input
+        for (Map.Entry<Integer, String> entry : inputs.entrySet()) {
+            int x = entry.getKey(); // This acts as the x-coordinate (key)
+            String baseAndValue = entry.getValue(); // This is the string containing base and value
+
+            // Extract base and value using JSON-like parsing
+            String baseStr = baseAndValue.split(",")[0].split(":")[1].replace("\"", "");
+            String valueStr = baseAndValue.split(",")[1].split(":")[1].replace("\"", "").replace("}", "");
+
+            int base = Integer.parseInt(baseStr); // Base of the y-value
+            BigInteger y = decodeValue(valueStr, base); // Decode the y-value based on its base
+
+            points.put(x, y); // Store the (x, y) points
+        }
+
+        // Find the constant term using Lagrange interpolation
+        BigInteger constantTerm = lagrangeInterpolation(points, k);
+
+        // Output the constant term
+        System.out.println("The constant term (secret c) is: " + constantTerm);
+    }
+}
